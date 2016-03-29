@@ -29,13 +29,9 @@ if [[ "$1" = "deploy_challenge" ]]; then
    soa=`mysql -h'$mysql_host' -u'$mysql_user' -p'$mysql_pass' -s -N -e "SELECT content FROM '$mysql_base'.records WHERE domain_id='$id' AND type='SOA'"`
    idSoa=`mysql -h'$mysql_host' -u'$mysql_user' -p'$mysql_pass' -s -N -e "SELECT id FROM '$mysql_base'.records WHERE domain_id='$id' AND type='SOA'"`
    IFS=' ' read -r -a soArray <<< "$soa"
-
    soArray[2]=$((soArray[2]+1))
-
    soaNew=$( IFS=$' '; echo "${soArray[*]}" )
-
    mysql -h'$mysql_host' -u'$mysql_user' -p'$mysql_pass' -s -e "UPDATE '$mysql_base'.records SET content='$soaNew' WHERE id='$idSoa'"
-
    mysql -h'$mysql_host' -u'$mysql_user' -p'$mysql_pass' -s -e "INSERT INTO '$mysql_base'.records (id,domain_id,name,type,content,ttl,prio,change_date) VALUES ('', '$id', '_acme-challenge.$domain','TXT','\"$token\"','5','0','$timestamp')"
 
   while ! dig @8.8.8.8 -t TXT _acme-challenge.$domain | grep "$token" > /dev/null
@@ -43,9 +39,6 @@ if [[ "$1" = "deploy_challenge" ]]; then
        printf "."
        sleep 3
     done
-
-
-
    done="yes"
 fi
 
@@ -58,7 +51,6 @@ if [[ "${1}" = "deploy_cert" ]]; then
     # do nothing for now
     done="yes"
 fi
-
 
 if [[ ! "${done}" = "yes" ]]; then
     echo Unkown hook "${1}"
