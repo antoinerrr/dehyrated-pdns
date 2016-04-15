@@ -34,7 +34,7 @@ if [[ "$1" = "deploy_challenge" ]]; then
    mysql -h'$mysql_host' -u'$mysql_user' -p'$mysql_pass' -s -e "UPDATE '$mysql_base'.records SET content='$soaNew' WHERE id='$idSoa'"
    mysql -h'$mysql_host' -u'$mysql_user' -p'$mysql_pass' -s -e "INSERT INTO '$mysql_base'.records (id,domain_id,name,type,content,ttl,prio,change_date) VALUES ('', '$id', '_acme-challenge.$domain','TXT','\"$token\"','5','0','$timestamp')"
 
-  while ! dig @8.8.8.8 -t TXT _acme-challenge.$domain | grep "$token" > /dev/null
+  while ! dig +trace +short -t TXT _acme-challenge.$domain | grep -- "$token" > /dev/null
     do
        printf "."
        sleep 3
