@@ -15,6 +15,10 @@ mysql_host="localhost"
 mysql_user="root"
 mysql_pass="password"
 
+# Wait this value in seconds at max for all nameservers to be ready 
+# with the deployed challange or fail if they are not
+dns_sync_timeout_secs=90
+
 export            pw_file="$HOME/.letsencrypt_pdns_my.cnf"
 export mysql_default_opts="--defaults-extra-file=$pw_file --host=$mysql_host --user=$mysql_user --silent"
 
@@ -47,23 +51,27 @@ if [[ "$1" = "deploy_challenge" ]]; then
    mysql_exec -e "UPDATE $mysql_base.records SET content='$soaNew' WHERE id='$idSoa'"
    mysql_exec -e "INSERT INTO $mysql_base.records (id,domain_id,name,type,content,ttl,prio,change_date) VALUES ('', '$id', '_acme-challenge.$domain','TXT','$token','5','0','$timestamp')"
 
-  # get nameservers for domain
-  nameservers="$(dig -t ns +short ${domain#*.})"
-  while :
-    do
-        failed_servers=0
-        for nameserver in $nameservers;do
-                if ! dig @$nameserver +short -t TXT _acme-challenge.$domain | grep -- "$token" > /dev/null
-                then
-                        failed_servers=1
-                fi
-        done
-        # return only if every server has the challenge
-        [ "$failed_servers" == 0 ] && break
-        sleep 1
-       printf "."
-    done
-   done="yes"
+   nameservers="$(dig -t ns +short ${domain#*.})"
+   challenge_deployed=0
+   for((timeout_counter=0;$timeout_counter<$dns_sync_timeout_secs;failed_servers=0,timeout_counter++)); do
+     for nameserver in $nameservers;do
+       if ! dig @$nameserver +short -t TXT _acme-challenge.$domain | grep -- "$token" > /dev/null; then
+         failed_servers=1
+       fi
+     done
+     [ "$failed_servers" == 0 ] && { challenge_deployed=1 ; break ; }
+     sleep 1
+     printf "."
+   done
+   if [ "$challenge_deployed" == "1" ]; then
+     done="yes"
+   else
+     echo -e "\n\nERROR:"
+     echo "Challenge could not be deployed to all nameservers. Timeout of $dns_sync_timeout_secs "
+     echo "seconds reached. If your slave servers need more time to synchronize, increase value "
+     echo "of variable dns_sync_timeout_secs in file $0."
+     exit 1
+   fi
 fi
 
 if [[ "$1" = "clean_challenge" ]]; then
