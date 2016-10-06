@@ -53,6 +53,7 @@ if [[ "$1" = "deploy_challenge" ]]; then
        sleep 3
     done
    done="yes"
+   sleep 30
 fi
 
 if [[ "$1" = "clean_challenge" ]]; then
