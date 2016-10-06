@@ -50,7 +50,7 @@ if [[ "$1" = "deploy_challenge" ]]; then
   # get nameservers for domain
   nameservers="$(dig -t ns +short ${domain#*.})"
   while :
-    do  
+    do
         failed_servers=0
         for nameserver in $nameservers;do
                 if ! dig @$nameserver +short -t TXT _acme-challenge.$domain | grep -- "$token" > /dev/null
@@ -58,13 +58,12 @@ if [[ "$1" = "deploy_challenge" ]]; then
                         failed_servers=1
                 fi
         done
-	# return only if every server has the challenge
+        # return only if every server has the challenge
         [ "$failed_servers" == 0 ] && break
         sleep 1
        printf "."
     done
    done="yes"
-   sleep 30
 fi
 
 if [[ "$1" = "clean_challenge" ]]; then
