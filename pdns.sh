@@ -34,10 +34,21 @@ if [[ "$1" = "deploy_challenge" ]]; then
    mysql -h"$mysql_host" -u"$mysql_user" -p"$mysql_pass" -s -e "UPDATE $mysql_base.records SET content='$soaNew' WHERE id='$idSoa'"
    mysql -h"$mysql_host" -u"$mysql_user" -p"$mysql_pass" -s -e "INSERT INTO $mysql_base.records (id,domain_id,name,type,content,ttl,prio,change_date) VALUES ('', '$id', '_acme-challenge.$domain','TXT','$token','5','0','$timestamp')"
 
-  while ! dig +short -t TXT _acme-challenge.$domain | grep -- "$token" > /dev/null
-    do
+  # get nameservers for domain
+  nameservers="$(dig -t ns +short ${domain#*.})"
+  while :
+    do  
+        failed_servers=0
+        for nameserver in $nameservers;do
+                if ! dig @$nameserver +short -t TXT _acme-challenge.$domain | grep -- "$token" > /dev/null
+                then
+                        failed_servers=1
+                fi
+        done
+	# return only if every server has the challenge
+        [ "$failed_servers" == 0 ] && break
+        sleep 1
        printf "."
-       sleep 3
     done
    done="yes"
 fi
