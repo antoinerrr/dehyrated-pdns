@@ -50,10 +50,18 @@ if [[ "$1" = "deploy_challenge" ]]; then
    soaNew="$( IFS=$' '; echo "${soArray[*]}" )"
    mysql_exec -e "UPDATE $mysql_base.records SET content='$soaNew' WHERE id='$idSoa'"
    mysql_exec -e "INSERT INTO $mysql_base.records (id,domain_id,name,type,content,ttl,prio,change_date) VALUES ('', '$id', '_acme-challenge.$domain','TXT','$token','5','0','$timestamp')"
-
-   nameservers="$(dig -t ns +short ${domain#*.})"
+ 
+   domain_without_trailing_dot=${domain%.}
+   dots=${domain_without_trailing_dot//[^.]}
+   if [ "${#dots}" -gt 1 ]; then
+       # certificate is for subdomain
+       nameservers="$(dig -t ns +short ${domain#*.})"
+   else
+       # certificate is for domain itself, dont strip of a domain part
+       nameservers="$(dig -t ns +short ${domain})"
+   fi
    challenge_deployed=0
-   for((timeout_counter=0;$timeout_counter<$dns_sync_timeout_secs;failed_servers=0,timeout_counter++)); do
+   for((timeout_counter=0,failed_servers=0;$timeout_counter<$dns_sync_timeout_secs;failed_servers=0,timeout_counter++)); do
      for nameserver in $nameservers;do
        if ! dig @$nameserver +short -t TXT _acme-challenge.$domain | grep -- "$token" > /dev/null; then
          failed_servers=1
