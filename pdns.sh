@@ -35,8 +35,15 @@ EOF
 timestamp=$(date +%s)
 
 IFS='.' read -a myarray_domain <<< "$domain"
-root_domain="${myarray_domain[*]: -2:1}.${myarray_domain[*]: -1:1}"
-
+# Extract TLD from domain
+lastcmp=$(echo $domain | rev | cut -d "." -f2);
+if [ ${#lastcmp} == 2 ]; then
+    root_domain=$(echo $domain | rev | cut -d "." -f1-3 | rev) # ccTLDs
+    root_length=2
+else
+    root_domain=$(echo $domain | rev | cut -d "." -f1-2 | rev) # TLD
+    root_length=1
+fi
 done="no"
 
 function mysql_exec { mysql $mysql_default_opts "${@}"; }
@@ -53,7 +60,7 @@ if [[ "$1" = "deploy_challenge" ]]; then
  
    domain_without_trailing_dot=${domain%.}
    dots=${domain_without_trailing_dot//[^.]}
-   if [ "${#dots}" -gt 1 ]; then
+   if [ "${#dots}" -gt $root_length ]; then
        # certificate is for subdomain
        nameservers="$(dig -t ns +short ${domain#*.})"
    else
