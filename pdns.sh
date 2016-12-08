@@ -14,6 +14,8 @@ mysql_base="pdns"
 mysql_host="localhost"
 mysql_user="root"
 mysql_pass="password"
+table_domains="domains"
+table_records="records"
 
 # Wait this value in seconds at max for all nameservers to be ready 
 # with the deployed challange or fail if they are not
@@ -49,14 +51,14 @@ done="no"
 function mysql_exec { mysql $mysql_default_opts "${@}"; }
 
 if [[ "$1" = "deploy_challenge" ]]; then
-       id="$(mysql_exec -N -e "SELECT id      FROM $mysql_base.domains WHERE name='$root_domain';")"
-      soa="$(mysql_exec -N -e "SELECT content FROM $mysql_base.records WHERE domain_id='$id' AND type='SOA'")"
-    idSoa="$(mysql_exec -N -e "SELECT id      FROM $mysql_base.records WHERE domain_id='$id' AND type='SOA'")"
+       id="$(mysql_exec -N -e "SELECT id      FROM $mysql_base.$table_domains WHERE name='$root_domain';")"
+      soa="$(mysql_exec -N -e "SELECT content FROM $mysql_base.$table_records WHERE domain_id='$id' AND type='SOA'")"
+    idSoa="$(mysql_exec -N -e "SELECT id      FROM $mysql_base.$table_records WHERE domain_id='$id' AND type='SOA'")"
    IFS=' ' read -r -a soArray <<< "$soa"
    soArray[2]=$((soArray[2]+1))
    soaNew="$( IFS=$' '; echo "${soArray[*]}" )"
-   mysql_exec -e "UPDATE $mysql_base.records SET content='$soaNew' WHERE id='$idSoa'"
-   mysql_exec -e "INSERT INTO $mysql_base.records (id,domain_id,name,type,content,ttl,prio,change_date) VALUES ('', '$id', '_acme-challenge.$domain','TXT','$token','5','0','$timestamp')"
+   mysql_exec -e "UPDATE $mysql_base.$table_records SET content='$soaNew' WHERE id='$idSoa'"
+   mysql_exec -e "INSERT INTO $mysql_base.$table_records (id,domain_id,name,type,content,ttl,prio,change_date) VALUES ('', '$id', '_acme-challenge.$domain','TXT','$token','5','0','$timestamp')"
  
    domain_without_trailing_dot=${domain%.}
    dots=${domain_without_trailing_dot//[^.]}
@@ -90,7 +92,7 @@ if [[ "$1" = "deploy_challenge" ]]; then
 fi
 
 if [[ "$1" = "clean_challenge" ]]; then
-    mysql_exec -e "DELETE FROM $mysql_base.records WHERE content = '$token' AND type = 'TXT'"
+    mysql_exec -e "DELETE FROM $mysql_base.$table_records WHERE content = '$token' AND type = 'TXT'"
     done="yes"
 fi
 
