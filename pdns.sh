@@ -16,13 +16,14 @@ mysql_user="root"
 mysql_pass="password"
 table_domains="domains"
 table_records="records"
-if [ -f "pdns.sh.conf" ]; then . pdns.sh.conf; fi
+mydir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+if [ -f "$mydir/pdns.sh.conf" ]; then . $mydir/pdns.sh.conf; fi
 
 # Wait this value in seconds at max for all nameservers to be ready 
 # with the deployed challange or fail if they are not
 dns_sync_timeout_secs=90
 
-export            pw_file="$HOME/.letsencrypt_pdns_my.cnf"
+export pw_file="$HOME/.letsencrypt_pdns_my.cnf"
 export mysql_default_opts="--defaults-file=$pw_file --host=$mysql_host --user=$mysql_user --silent"
 
 # write the mysql password to file, do not specify it the command line(insecure)
