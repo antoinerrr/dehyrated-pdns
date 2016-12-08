@@ -23,7 +23,7 @@ if [ -f "pdns.sh.conf" ]; then . pdns.sh.conf; fi
 dns_sync_timeout_secs=90
 
 export            pw_file="$HOME/.letsencrypt_pdns_my.cnf"
-export mysql_default_opts="--defaults-extra-file=$pw_file --host=$mysql_host --user=$mysql_user --silent"
+export mysql_default_opts="--defaults-file=$pw_file --host=$mysql_host --user=$mysql_user --silent"
 
 # write the mysql password to file, do not specify it the command line(insecure)
 touch $pw_file
