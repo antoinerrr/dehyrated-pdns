@@ -16,6 +16,7 @@ mysql_user="root"
 mysql_pass="password"
 table_domains="domains"
 table_records="records"
+if [ -f "pdns.sh.conf" ]; then . pdns.sh.conf; fi
 
 # Wait this value in seconds at max for all nameservers to be ready 
 # with the deployed challange or fail if they are not
