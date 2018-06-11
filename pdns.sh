@@ -10,6 +10,23 @@ set -u
 set -o pipefail
 umask 077
 
+exit_on_invalid_hook() {
+        local hook="$1"
+        case $hook in
+                deploy_challenge)
+                        ;;
+                clean_challenge)
+                        ;;
+                deploy_cert)
+                        ;;
+                *) # unknown hook - ignore and exit
+                        exit 0
+                ;;
+        esac
+}
+
+exit_on_invalid_hook "$1"
+
 mysql_base="pdns"
 mysql_host="localhost"
 mysql_user="root"
